@@ -410,7 +410,6 @@ def set_ip(request,domain,ip):
 
 def updateip(request):
     print("Entering updateip view")
-    logger.debug("Entering updateip view")
     return_code="unknown"
     username=""
     domain=""
@@ -450,9 +449,9 @@ def updateip(request):
             if 'HTTP_AUTHORIZATION' in request.META:
                 auth = request.META['HTTP_AUTHORIZATION'].split()
                 if len(auth) == 2:
-                    logger.debug(auth)
-                    logger.debug(auth[0].lower())
-                    logger.debug(auth[1])
+                    logger.debug("this is auth: {auth}")
+                    logger.debug("this is auth[0]" + auth[0].lower())
+                    logger.debug("this is auth[0]" + auth[1])
 
                     if auth[0].lower() == "basic":
                         username, passwd = base64.b64decode(auth[1]).decode("utf-8", "ignore").split(':')
@@ -473,23 +472,30 @@ def updateip(request):
                                 return_code, message = set_ip(request,domain,ip)
                             else:
                                 return_code="nohost"
+                                print(f"nohost")
                                 message="The hostname specified does not exist in this user account"
                         else:
+                            print(f"badauth")
                             return_code="badauth"
                             message="The username and password pair do not match a real user"
                     else:
+                        print(f"unknown 1")
                         return_code="unknown"
                         message="Incorrect authentication format"
                 else:
+                    print(f"unknown 2")
                     return_code="unknown"
                     message="Incorrect authentication format"
             else:
+                print(f"unknown 3")
                 return_code="unknown"
                 message="Missing header HTTP_AUTHORIZATION"
         else:
+            print(f"badagent")
             return_code="badagent"
             message="Missing header HTTP_USER_AGENT"
     else:
+        print(f"abuse")
         return_code="abuse"
         message="You have exceeded the maximum number of attempts"
 
