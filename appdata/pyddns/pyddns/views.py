@@ -408,6 +408,7 @@ def set_ip(request,domain,ip):
 
 def updateip(request):
     print("Entering updateip view")
+    logger.info("Entering updateip view")
     return_code="unknown"
     username=""
     domain=""
