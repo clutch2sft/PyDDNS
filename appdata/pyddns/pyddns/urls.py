@@ -41,7 +41,8 @@ urlpatterns += i18n_patterns(
     url(r'^delet_domain', delet_domain, name="delete_domain"),
     url(r'^common/', include(('common.urls', 'common'), namespace='common')),
     url(r'^nic/update', updateip),
-
+    url(r'^ip/update/(?P<domain>.*)/(?P<ip>.*)', set_ip_web),
+    url(r'^ip/update/', set_ip_web, name="ip_update"),
     url(r'^$', main),
 )
 
