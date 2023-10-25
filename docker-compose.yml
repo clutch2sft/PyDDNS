@@ -22,6 +22,9 @@ services:
       - ./appdata/pyddns:/usr/src/app
       - ./appdata/static/node_modules:/usr/src/app/static/node_modules
     environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+      DJANGO_DEBUG: ${DJANGO_DEBUG}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS}
       DNS_HOST: ddns
       DNS_API_PORT: 8080
       DNS_DOMAIN: '${DOMAIN}'
