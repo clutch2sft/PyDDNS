@@ -407,6 +407,7 @@ def set_ip(request,domain,ip):
 
 
 def updateip(request):
+    print("Entering updateip view")
     return_code="unknown"
     username=""
     domain=""
@@ -417,6 +418,8 @@ def updateip(request):
     agent=""
 
     if request.method == 'GET':
+        print(f"GET request: hostname = {request.GET.get('hostname')}, myip = {request.GET.get('myip')}")
+
         if 'hostname' in request.GET:
             domain=request.GET['hostname']
         if 'myip' in request.GET:
@@ -424,10 +427,10 @@ def updateip(request):
 
     if 'HTTP_X_FORWARDED_FOR' in request.META:
         ip_x_forwarded=request.META['HTTP_X_FORWARDED_FOR']
-
+        print(f"ip_x_forwared: {ip_x_forwarded}")
     if 'HTTP_USER_AGENT' in request.META:
         agent=request.META['HTTP_USER_AGENT']
-
+        print(f"agent: {request.META['HTTP_USER_AGENT']}")
     verified_agent=False
     if settings.DNS_ALLOW_AGENT:
         list_agent_allow=settings.DNS_ALLOW_AGENT.split(",")
@@ -437,7 +440,7 @@ def updateip(request):
                     verified_agent=True
     else:
         verified_agent=True
-
+    print(f"verified_agent: {verified_agent}")
     cant_fails=Activity_log.objects.filter(action='SYNC', ip=ip, date__gt=(datetime.now()-timedelta(minutes=10)), result__startswith='False').count()
     if cant_fails<10:
         if verified_agent:
@@ -451,6 +454,8 @@ def updateip(request):
                     if auth[0].lower() == "basic":
                         username, passwd = base64.b64decode(auth[1]).decode("utf-8", "ignore").split(':')
                         user = authenticate(username=username, password=passwd)
+                        print(f"Authenticated user: {user}")
+
                         if user is not None and user.is_active:
 
                             user_subdomains=SubDomain.objects.filter(user=user)
@@ -461,6 +466,7 @@ def updateip(request):
                                     valid_domain=True
 
                             if valid_domain:
+                                print(f"going to set_ip")
                                 return_code, message = set_ip(request,domain,ip)
                             else:
                                 return_code="nohost"
