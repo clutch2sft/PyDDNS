@@ -378,7 +378,19 @@ def set_ip(request,domain,ip):
         message=""
         subdomain=domain.split(".")[0]
         #print 'http://%s:%s/update?secret=%s&domain=%s&addr=%s'%(settings.DNS_HOST,settings.DNS_API_PORT,settings.DNS_SHARED_SECRET,subdomain,ip)
-        r = requests.get('http://%s:%s/update?secret=%s&domain=%s&addr=%s'%(settings.DNS_HOST,settings.DNS_API_PORT,settings.DNS_SHARED_SECRET,subdomain,ip))
+        #r = requests.get('http://%s:%s/update?secret=%s&domain=%s&addr=%s'%(settings.DNS_HOST,settings.DNS_API_PORT,settings.DNS_SHARED_SECRET,subdomain,ip))
+        # Prepare the URL template
+        url_template = "http://%s:%s/update?secret=%s&domain=%s&addr=%s"
+
+        # Populate the URL with actual values
+        actual_url = url_template % (settings.DNS_HOST, settings.DNS_API_PORT, settings.DNS_SHARED_SECRET, subdomain, ip)
+
+        # Print the URL to the terminal
+        print(f"Making request to URL: {actual_url}")
+
+        # Make the request
+        r = requests.get(actual_url)
+
         #print r.json()
         #print r.json()['Success']
         if r.json()['Success']:
