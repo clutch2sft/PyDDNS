@@ -162,6 +162,7 @@ def add_user(request,id_user=None):
     return render(request,"add_user.html",{'user':user})
 
 def add_subdomain(request):
+    logger.info("Entering add_subdomain view")
     myjson = {
         'error': "",
         'success': False,
@@ -305,6 +306,7 @@ def delet_domain(request):
 
 
 def set_ip_web(request,domain,ip):
+    logger.info("Entering set_ip_web view")
     myjson = {
         'message': '',
         'success': False,
@@ -364,7 +366,7 @@ def set_ip_web(request,domain,ip):
 
 def set_ip(request,domain,ip):
 
-
+    logger.info("Entering set_ip view")
     #FOR TEST - DIG
     # ----------------------
     resolver = dns.resolver.Resolver()
