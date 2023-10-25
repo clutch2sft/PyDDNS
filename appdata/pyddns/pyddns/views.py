@@ -32,7 +32,7 @@ logger = logging.getLogger('django')
 
 @login_required
 def main(request,id_user=None):
-    logger.info("LOGIN")
+    logger.debug("LOGIN")
     admin=False
     see_user=False
 
@@ -162,7 +162,7 @@ def add_user(request,id_user=None):
     return render(request,"add_user.html",{'user':user})
 
 def add_subdomain(request):
-    logger.info("Entering add_subdomain view")
+    logger.debug("Entering add_subdomain view")
     myjson = {
         'error': "",
         'success': False,
@@ -306,7 +306,7 @@ def delet_domain(request):
 
 
 def set_ip_web(request,domain,ip):
-    logger.info("Entering set_ip_web view")
+    logger.debug("Entering set_ip_web view")
     myjson = {
         'message': '',
         'success': False,
@@ -366,7 +366,7 @@ def set_ip_web(request,domain,ip):
 
 def set_ip(request,domain,ip):
 
-    logger.info("Entering set_ip view")
+    logger.debug("Entering set_ip view")
     #FOR TEST - DIG
     # ----------------------
     resolver = dns.resolver.Resolver()
@@ -410,7 +410,7 @@ def set_ip(request,domain,ip):
 
 def updateip(request):
     print("Entering updateip view")
-    logger.info("Entering updateip view")
+    logger.debug("Entering updateip view")
     return_code="unknown"
     username=""
     domain=""
@@ -450,9 +450,9 @@ def updateip(request):
             if 'HTTP_AUTHORIZATION' in request.META:
                 auth = request.META['HTTP_AUTHORIZATION'].split()
                 if len(auth) == 2:
-                    logger.info(auth)
-                    logger.info(auth[0].lower())
-                    logger.info(auth[1])
+                    logger.debug(auth)
+                    logger.debug(auth[0].lower())
+                    logger.debug(auth[1])
 
                     if auth[0].lower() == "basic":
                         username, passwd = base64.b64decode(auth[1]).decode("utf-8", "ignore").split(':')
