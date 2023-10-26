@@ -91,7 +91,7 @@
 							<!-- New "Manual" Column -->
 							<td>
 								<input type="text" id="manual_ip_{{ d.name }}" placeholder="Enter IP">
-								<button type="button" onclick="manualUpdateIp('{{ d.name }}.{{ domain }}')">Manual Update</button>
+								<button type="button" class="btn btn-success btn-xs attr_ip" onclick="manualUpdateIp('{{ d.name }}.{{ domain }}')">Manual Update</button>
 							</td>
 							<td>
 								<button type="button" class="btn btn-success btn-xs attr_ip" id="date_{{d.name}}" onclick="actualizarIp('{{d.name}}.{{domain}}')">{% trans "Update to" %} <span class="my_ip"></span></button>
