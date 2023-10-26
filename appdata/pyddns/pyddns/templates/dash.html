@@ -84,9 +84,15 @@
 					</tr>
 					{% for d in my_subdomains %}
 						<tr>
+							<!-- Existing "Action" Column -->
 							<td><input id="domain_{{ d.name }}" value="{{ d.name }}.{{domain}}" class="nostyle" readonly /><button class="btn btn-xs" data-clipboard-target="#domain_{{ d.name }}" title="{% trans "Copy" %}"> <img class="clippy" src="/static/admin/img/clippy.svg" width="13" alt="Copy to clipboard"> </button></td>
 							<td>{{ d.name|last_ip }}</td>
 							<td>{{ d.name|last_update }}</td>
+							<!-- New "Manual" Column -->
+							<td>
+								<input type="text" id="manual_ip_{{ d.name }}" placeholder="Enter IP">
+								<button type="button" onclick="manualUpdateIp('{{ d.name }}.{{ domain }}')">Manual Update</button>
+							</td>
 							<td>
 								<button type="button" class="btn btn-success btn-xs attr_ip" id="date_{{d.name}}" onclick="actualizarIp('{{d.name}}.{{domain}}')">{% trans "Update to" %} <span class="my_ip"></span></button>
 								{% if request.user.is_superuser or own_admin %}
@@ -196,6 +202,27 @@
 		});
 
 	}
+	function manualUpdateIp(domain) {
+  		var manualIp = document.getElementById('manual_ip_' + domain.split('.')[0]).value;
+  
+		$.ajax({
+			url: "{% url 'ip_update' %}" + domain + "/" + manualIp,
+			type: "GET",
+			processData: false,
+			contentType: false,
+			dataType: 'json',
+			success: function(result) {
+			console.log(result);
+			if(result['success']) {
+				// Optionally, you can display a success message or refresh the page
+				location.reload(true);
+			} else {
+				// Display the error message returned from the server
+				alert(result['message']);
+			}
+			}
+		});
+		}
 
 
 	$(function() {

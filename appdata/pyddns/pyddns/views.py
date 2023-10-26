@@ -104,7 +104,7 @@ def manage(request):
 
 @user_passes_test(lambda u: u.is_superuser,login_url='/common/permission_denied')
 def users(request, buscar=None):
-    #print buscar
+    #logger.debug buscar
     users=User.objects.all().order_by('username')
 
     if buscar:
@@ -128,7 +128,7 @@ def users(request, buscar=None):
 def domains(request, buscar=None):
     subdomains=SubDomain.objects.all().order_by('name')
 
-    #print buscar
+    #logger.debug buscar
     if buscar:
         subdomains=subdomains.filter( name__icontains=buscar )
     else:
@@ -155,10 +155,10 @@ def add_user(request,id_user=None):
     if id_user:
         try:
             user=User.objects.get(id=id_user)
-            #print user
+            #logger.debug user
         except OstUserEmail.DoesNotExist:
             pass
-            #print "DoesNotExist"
+            #logger.debug "DoesNotExist"
     return render(request,"add_user.html",{'user':user})
 
 def add_subdomain(request):
@@ -201,7 +201,7 @@ def set_user(request):
         'error': "",
         'success': False,
     }
-    #print request.POST
+    #logger.debug request.POST
     if "username" in request.POST.keys():
         username=request.POST['username']
         name=request.POST['name']
@@ -252,7 +252,7 @@ def set_user(request):
         user.email=email
         if password:
             #user.password=password
-            #print password
+            #logger.debug password
             user.set_password(password)
         user.save()
         myjson['success']= True
@@ -317,8 +317,8 @@ def set_ip_web(request,domain,ip):
     if user.is_superuser:
         admin=True
 
-    #print "Dominio"
-    #print domain
+    #logger.debug "Dominio"
+    #logger.debug domain
     subdomain=domain.split(".")[0]
     subdomain_obj=SubDomain.objects.get(name=subdomain)
     try:
@@ -343,7 +343,7 @@ def set_ip_web(request,domain,ip):
         else:
             myjson['message'] = message
 
-        #print return_code
+        #logger.debug return_code
         #if return_code != "nochg":
 
         register=False
@@ -379,7 +379,7 @@ def set_ip(request,domain,ip):
     if str(ip_dig) != str(ip):
         message=""
         subdomain=domain.split(".")[0]
-        #print 'http://%s:%s/update?secret=%s&domain=%s&addr=%s'%(settings.DNS_HOST,settings.DNS_API_PORT,settings.DNS_SHARED_SECRET,subdomain,ip)
+        #logger.debug 'http://%s:%s/update?secret=%s&domain=%s&addr=%s'%(settings.DNS_HOST,settings.DNS_API_PORT,settings.DNS_SHARED_SECRET,subdomain,ip)
         #r = requests.get('http://%s:%s/update?secret=%s&domain=%s&addr=%s'%(settings.DNS_HOST,settings.DNS_API_PORT,settings.DNS_SHARED_SECRET,subdomain,ip))
         # Prepare the URL template
         url_template = "http://%s:%s/update?secret=%s&domain=%s&addr=%s"
@@ -387,21 +387,21 @@ def set_ip(request,domain,ip):
         # Populate the URL with actual values
         actual_url = url_template % (settings.DNS_HOST, settings.DNS_API_PORT, settings.DNS_SHARED_SECRET, subdomain, ip)
 
-        # Print the URL to the terminal
-        print(f"Making request to URL: {actual_url}")
+        # logger.debug the URL to the terminal
+        logger.debug(f"Making request to URL: {actual_url}")
 
         # Make the request
         r = requests.get(actual_url)
 
-        #print r.json()
-        #print r.json()['Success']
+        #logger.debug r.json()
+        #logger.debug r.json()['Success']
         if r.json()['Success']:
             return_code = "good"
             message = "The updatewas successful and the hostname is now updated"
         else:
             return_code = "dnserr"
             message = "The APP not sinc bind"
-        #print return_code
+        #logger.debug return_code
         return return_code, message
     else:
         return "nochg", "It already exists"
@@ -409,7 +409,7 @@ def set_ip(request,domain,ip):
 
 
 def updateip(request):
-    print("Entering updateip view")
+    logger.debug("Entering updateip view")
     return_code="unknown"
     username=""
     domain=""
@@ -419,20 +419,24 @@ def updateip(request):
     message=""
     agent=""
 
+    # Check if request is GET
     if request.method == 'GET':
-        print(f"GET request: hostname = {request.GET.get('hostname')}, myip = {request.GET.get('myip')}")
-
+        logger.debug(f"GET request: hostname = {request.GET.get('hostname')}, myip = {request.GET.get('myip')}")
         if 'hostname' in request.GET:
             domain=request.GET['hostname']
         if 'myip' in request.GET:
             ip=request.GET['myip']
 
+    # Check for X-Forwarded-For header
     if 'HTTP_X_FORWARDED_FOR' in request.META:
         ip_x_forwarded=request.META['HTTP_X_FORWARDED_FOR']
-        print(f"ip_x_forwared: {ip_x_forwarded}")
+        logger.debug(f"ip_x_forwarded: {ip_x_forwarded}")
+
+    # Check for User-Agent header
     if 'HTTP_USER_AGENT' in request.META:
         agent=request.META['HTTP_USER_AGENT']
-        print(f"agent: {request.META['HTTP_USER_AGENT']}")
+        logger.debug(f"agent: {request.META['HTTP_USER_AGENT']}")
+
     verified_agent=False
     if settings.DNS_ALLOW_AGENT:
         list_agent_allow=settings.DNS_ALLOW_AGENT.split(",")
@@ -442,64 +446,66 @@ def updateip(request):
                     verified_agent=True
     else:
         verified_agent=True
-    print(f"verified_agent: {verified_agent}")
+
+    logger.debug(f"verified_agent: {verified_agent}")
+
+    # Count failed attempts from same IP in last 10 minutes
     cant_fails=Activity_log.objects.filter(action='SYNC', ip=ip, date__gt=(datetime.now()-timedelta(minutes=10)), result__startswith='False').count()
-    if cant_fails<10:
+
+    # Check for abuse (too many failed attempts)
+    if cant_fails < 10:
+        # Check if User-Agent is verified
         if verified_agent:
+            # Check for HTTP Authorization header
             if 'HTTP_AUTHORIZATION' in request.META:
                 auth = request.META['HTTP_AUTHORIZATION'].split()
+                # Check if auth header has exactly two parts
                 if len(auth) == 2:
-                    logger.debug("this is auth: {auth}")
-                    logger.debug("this is auth[0]" + auth[0].lower())
-                    logger.debug("this is auth[0]" + auth[1])
-
+                    # Check for Basic Authentication
                     if auth[0].lower() == "basic":
                         username, passwd = base64.b64decode(auth[1]).decode("utf-8", "ignore").split(':')
                         user = authenticate(username=username, password=passwd)
-                        print(f"Authenticated user: {user}")
-
+                        # Check for successful authentication
                         if user is not None and user.is_active:
-
-                            user_subdomains=SubDomain.objects.filter(user=user)
-                            valid_domain=False
-
+                            user_subdomains = SubDomain.objects.filter(user=user)
+                            valid_domain = False
+                            # Check for valid subdomain
                             for sub in user_subdomains:
-                                if domain == "%s.%s"%(sub.name,settings.DNS_DOMAIN):
-                                    valid_domain=True
-
+                                if domain == "%s.%s" % (sub.name, settings.DNS_DOMAIN):
+                                    valid_domain = True
+                            # If valid subdomain, proceed to set IP
                             if valid_domain:
-                                print(f"going to set_ip")
-                                return_code, message = set_ip(request,domain,ip)
+                                return_code, message = set_ip(request, domain, ip)
+                            # If subdomain not valid, log as "nohost"
                             else:
-                                return_code="nohost"
-                                print(f"nohost")
-                                message="The hostname specified does not exist in this user account"
+                                return_code = "nohost"
+                                message = "The hostname specified does not exist in this user account"
+                        # If authentication failed, log as "badauth"
                         else:
-                            print(f"badauth")
-                            return_code="badauth"
-                            message="The username and password pair do not match a real user"
+                            return_code = "badauth"
+                            message = "The username and password pair do not match a real user"
+                    # Handle unknown authentication method
                     else:
-                        print(f"unknown 1")
-                        return_code="unknown"
-                        message="Incorrect authentication format"
+                        return_code = "unknown"
+                        message = "Incorrect authentication format"
+                # Handle malformed authentication header
                 else:
-                    print(f"unknown 2")
-                    return_code="unknown"
-                    message="Incorrect authentication format"
+                    return_code = "unknown"
+                    message = "Incorrect authentication format"
+            # Handle missing HTTP Authorization header
             else:
-                print(f"unknown 3")
-                return_code="unknown"
-                message="Missing header HTTP_AUTHORIZATION"
+                return_code = "unknown"
+                message = "Missing header HTTP_AUTHORIZATION"
+        # Handle unverified User-Agent
         else:
-            print(f"badagent")
-            return_code="badagent"
-            message="Missing header HTTP_USER_AGENT"
+            return_code = "badagent"
+            message = "Missing header HTTP_USER_AGENT"
+    # Handle too many failed attempts (abuse)
     else:
-        print(f"abuse")
-        return_code="abuse"
-        message="You have exceeded the maximum number of attempts"
+        return_code = "abuse"
+        message = "You have exceeded the maximum number of attempts"
 
-    #if return_code != "nochg":
+    # Register activity log if conditions are met
     register=False
     last_activity=Activity_log.objects.filter(user_affected=username).last()
     if last_activity:
@@ -508,7 +514,9 @@ def updateip(request):
     else:
         register=True
 
+    # Log the activity (this is where failed attempts get logged)
     if register:
         Activity_log(action='SYNC', agent=agent , ip=ip, code=return_code, xforward=ip_x_forwarded, user_affected=username, domain=domain, result="%s"%(message)).save()
 
     return HttpResponse(return_code)
+
